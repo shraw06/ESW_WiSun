@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Silicon Laboratories Inc. (www.silabs.com)
+
+[Unit]
+Description=Wi-SUN Router Service
+After=network.target
+
+[Service]
+BusName=com.silabs.Wisun.Router
+ExecStart=/usr/local/bin/wsrd -F /etc/wsrd.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Network Visualization</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #info {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
+            color: #fff; padding: 15px; border-radius: 8px; font-size: 13px; max-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+        #info h3 { margin: 0 0 10px 0; font-size: 16px; }
+        .legend-item { display: flex; align-items: center; margin: 5px 0; cursor: pointer; padding: 3px; border-radius: 3px; transition: background 0.2s; }
+        .legend-item:hover { background: rgba(255,255,255,0.1); }
+        .legend-color { width: 18px; height: 18px; margin-right: 10px; border: 1px solid #fff; border-radius: 3px; }
+        #controls {
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #fff;
+            padding: 15px; border-radius: 8px; backdrop-filter: blur(10px);
+        }
+        .control-group { margin: 10px 0; }
+        .control-group label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: bold; }
+        button { background: #4444ff; color: #fff; border: none; padding: 8px 15px; margin: 3px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        button:hover { background: #6666ff; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        input[type="range"] { width: 100%; margin: 5px 0; }
+        input[type="checkbox"] { margin-right: 5px; }
+        .view-button { width: 100%; margin: 3px 0; }
+        #measurements {
+            position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8);
+            color: #fff; padding: 15px; border-radius: 8px; backdrop-filter: blur(10px);
+            font-size: 12px; max-width: 300px;
+        }
+        #measurements h4 { margin: 0 0 8px 0; font-size: 14px; }
+        .distance-line { margin: 3px 0; padding: 2px 0; }
+        #tooltip { position: absolute; background: rgba(0,0,0,0.9); color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 11px; pointer-events: none; display: none; z-index: 1000; }
+        .slider-value { display: inline-block; min-width: 40px; text-align: right; font-weight: bold; color: #4444ff; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="info">
+        <h3>🗺️ 3D Network Map</h3>
+        <div class="legend-item" data-type="locations">
+            <div class="legend-color" style="background: #ff4444;"></div>
+            <span>Location Points (1m)</span>
+        </div>
+        <div class="legend-item" data-type="nodes">
+            <div class="legend-color" style="background: #4444ff;"></div>
+            <span>Campus Nodes (20m)</span>
+        </div>
+        <div class="legend-item" data-type="buildings">
+            <div class="legend-color" style="background: #888888;"></div>
+            <span>Buildings (20m)</span>
+        </div>
+        <p style="margin-top: 10px; font-size: 11px; line-height: 1.4;">
+            <strong>🖱️ Controls:</strong><br />
+            Left click + drag: Rotate<br />
+            Right click + drag: Pan<br />
+            Scroll: Zoom
+        </p>
+    </div>
+
+    <div id="controls">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px;">⚙️ Controls</h3>
+        <div class="control-group">
+            <label>📷 Quick Views</label>
+            <button class="view-button" onclick="setView('top')">Top View</button>
+            <button class="view-button" onclick="setView('side')">Side View</button>
+            <button class="view-button" onclick="setView('front')">Front View</button>
+            <button class="view-button" onclick="setView('perspective')">Perspective</button>
+        </div>
+        <div class="control-group">
+            <label><input type="checkbox" id="showGrid" checked onchange="toggleGrid()" /> Show Grid</label>
+            <label><input type="checkbox" id="showAxes" checked onchange="toggleAxes()" /> Show Axes</label>
+            <label><input type="checkbox" id="showConnections" onchange="toggleConnections()" /> Show Connections</label>
+            <label><input type="checkbox" id="showDistances" onchange="toggleDistances()" /> Show Distances</label>
+        </div>
+        <div class="control-group">
+            <label>Building Opacity: <span class="slider-value" id="opacityValue">70%</span></label>
+            <input type="range" id="buildingOpacity" min="0" max="100" value="70" oninput="updateBuildingOpacity(this.value)" />
+        </div>
+        <div class="control-group">
+            <label>Animation Speed: <span class="slider-value" id="speedValue">0</span></label>
+            <input type="range" id="rotationSpeed" min="0" max="100" value="0" oninput="updateRotationSpeed(this.value)" />
+        </div>
+        <div class="control-group">
+            <label>🔍 Zoom</label>
+            <button onclick="zoomIn()" style="width: 48%; display: inline-block;">Zoom In</button>
+            <button onclick="zoomOut()" style="width: 48%; display: inline-block;">Zoom Out</button>
+        </div>
+        <div class="control-group">
+            <button onclick="resetView()" style="width: 100%;">🔄 Reset View</button>
+            <button onclick="toggleFullscreen()" style="width: 100%;">⛶ Fullscreen</button>
+        </div>
+    </div>
+
+    <div id="measurements">
+        <h4>📏 Measurements</h4>
+        <div id="distanceList">Click "Show Distances" to calculate distances</div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(800, 400, 800);
+        camera.lookAt(515, 0, 575);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(100, 200, 100);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(1000, 50, 0x444444, 0x222222);
+        gridHelper.position.y = 0;
+        scene.add(gridHelper);
+
+        // Axes helper
+        const axesHelper = new THREE.AxesHelper(100);
+        scene.add(axesHelper);
+
+        // Store objects for interaction
+        const sceneObjects = { locations: [], nodes: [], buildings: [], connections: [], labels: [] };
+
+        // Location points (h=1m)
+        const locations = {};
+        const startZ = 180;
+        const endZ = 970;
+        const numPoints = 20;
+        const spacing = (endZ - startZ) / (numPoints - 1);
+        for (let i = 0; i < numPoints; i++) {
+            const zCoord = startZ + i * spacing;
+            locations[`Location ${i + 1}`] = [500, 1, zCoord];
+        }
+
+        const locationGeometry = new THREE.SphereGeometry(5, 16, 16);
+        const locationMaterial = new THREE.MeshPhongMaterial({ color: 0xff4444, emissive: 0x330000 });
+
+        Object.entries(locations).forEach(([name, [x, y, z]]) => {
+            const sphere = new THREE.Mesh(locationGeometry, locationMaterial);
+            sphere.position.set(x, y, z);
+            sphere.castShadow = true;
+            sphere.userData = { type: 'location', name, coords: [x, y, z] };
+            scene.add(sphere);
+            sceneObjects.locations.push(sphere);
+
+            // Label pole
+            const poleGeometry = new THREE.CylinderGeometry(0.5, 0.5, y, 8);
+            const poleMaterial = new THREE.MeshPhongMaterial({ color: 0xff4444 });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+            pole.position.set(x, y / 2, z);
+            scene.add(pole);
+        });
+
+        // Campus nodes (h=20m)
+        const campusNodesData = [
+            ['Node 1', 520, 20, 880],
+            ['Node 2', 520, 20, 160]
+        ];
+
+        const nodeGeometry = new THREE.CylinderGeometry(4, 4, 20, 16);
+        const nodeMaterial = new THREE.MeshPhongMaterial({ color: 0x4444ff, emissive: 0x000033 });
+
+        campusNodesData.forEach(([name, x, y, z]) => {
+            const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+            node.position.set(x, y / 2, z);
+            node.castShadow = true;
+            node.userData = { type: 'node', name, coords: [x, y / 2, z] };
+            scene.add(node);
+            sceneObjects.nodes.push(node);
+
+            const antennaGeometry = new THREE.ConeGeometry(2, 10, 8);
+            const antenna = new THREE.Mesh(antennaGeometry, nodeMaterial);
+            antenna.position.set(x, y + 5, z);
+            scene.add(antenna);
+        });
+
+        // Buildings
+        const buildingHeight = 20;
+        const buildingWidth = 20;
+        const buildingDepth = 750;
+        const buildingGeometry = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingDepth);
+        const buildingMaterial = new THREE.MeshPhongMaterial({ color: 0x888888, transparent: true, opacity: 0.7 });
+        const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+        building.position.set(515, buildingHeight / 2, 525);
+        building.castShadow = true;
+        building.receiveShadow = true;
+        building.userData = { type: 'building', name: 'Building Line', coords: [515, buildingHeight/2, 525] };
+        scene.add(building);
+        sceneObjects.buildings.push(building);
+        const edges = new THREE.EdgesGeometry(buildingGeometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+        building.add(wireframe);
+
+        // Bridge structure
+        const bridgeLength = 520 - 270;
+        const bridgeThickness = 20;
+        const bridgeHeight = 6;
+        const bridgeGeometry = new THREE.BoxGeometry(bridgeLength, bridgeHeight, bridgeThickness);
+        const bridgeMaterial = new THREE.MeshPhongMaterial({ color: 0xaa6633, transparent: true, opacity: 0.8 });
+        const bridge = new THREE.Mesh(bridgeGeometry, bridgeMaterial);
+        bridge.position.set((520 + 270) / 2, 20 + bridgeHeight / 2, 520);
+        bridge.castShadow = true;
+        bridge.receiveShadow = true;
+        bridge.userData = { type: 'bridge', name: 'Bridge Structure', coords: [ (520+270)/2, 20+bridgeHeight/2, 520 ] };
+        scene.add(bridge);
+        sceneObjects.buildings.push(bridge);
+        const bridgeEdges = new THREE.EdgesGeometry(bridgeGeometry);
+        const bridgeWireframe = new THREE.LineSegments(bridgeEdges, lineMaterial);
+        bridge.add(bridgeWireframe);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x0a0a0a, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = Math.PI / 2;
+        ground.position.y = 0;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Raycaster / tooltip
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        // Controls
+        let isDragging = false;
+        let isPanning = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        const rotationSpeedConst = 0.005;
+        const panSpeed = 0.5;
+        let autoRotationSpeed = 0;
+
+        function updateTooltip(e, object) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = e.clientX + 15 + 'px';
+            tooltip.style.top = e.clientY + 15 + 'px';
+            const coords = object.userData.coords || [object.position.x, object.position.y, object.position.z];
+            tooltip.innerHTML = `<strong>${object.userData.name}</strong><br>Type: ${object.userData.type}<br>Position: (${coords[0].toFixed(1)}, ${coords[1].toFixed(1)}, ${coords[2].toFixed(1)})`;
+        }
+
+        function clearTooltip() { tooltip.style.display = 'none'; }
+
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            if (e.button === 0) isDragging = true; else if (e.button === 2) isPanning = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            if (isDragging) {
+                const dx = e.clientX - previousMousePosition.x;
+                const dy = e.clientY - previousMousePosition.y;
+                const radius = Math.hypot(camera.position.x - 515, camera.position.z - 575);
+                const currentAngle = Math.atan2(camera.position.z - 575, camera.position.x - 515);
+                const newAngle = currentAngle - dx * rotationSpeedConst;
+                camera.position.x = 515 + radius * Math.cos(newAngle);
+                camera.position.z = 575 + radius * Math.sin(newAngle);
+                camera.position.y -= dy * rotationSpeedConst * 100;
+                camera.lookAt(515, 10, 575);
+            } else if (isPanning) {
+                const dx = e.clientX - previousMousePosition.x;
+                const dy = e.clientY - previousMousePosition.y;
+                camera.position.x -= dx * panSpeed;
+                camera.position.z += dy * panSpeed;
+            } else {
+                // hover
+                raycaster.setFromCamera(mouse, camera);
+                const allObjects = [...sceneObjects.locations, ...sceneObjects.nodes, ...sceneObjects.buildings];
+                const intersects = raycaster.intersectObjects(allObjects);
+                if (intersects.length > 0) {
+                    updateTooltip(e, intersects[0].object);
+                } else {
+                    clearTooltip();
+                }
+            }
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => { isDragging = false; isPanning = false; });
+        renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            const delta = e.deltaY * zoomSpeed;
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            camera.position.addScaledVector(direction, -delta);
+        }, { passive: false });
+
+        // View helpers
+        window.setView = function(view) {
+            const centerX = 515, centerZ = 575; const distance = 600;
+            switch (view) {
+                case 'top': camera.position.set(centerX, 800, centerZ); camera.lookAt(centerX, 0, centerZ); break;
+                case 'side': camera.position.set(centerX + distance, 200, centerZ); camera.lookAt(centerX, 0, centerZ); break;
+                case 'front': camera.position.set(centerX, 200, centerZ + distance); camera.lookAt(centerX, 0, centerZ); break;
+                default: camera.position.set(800, 400, 800); camera.lookAt(centerX, 10, centerZ);
+            }
+        };
+        window.resetView = function() { camera.position.set(800, 400, 800); camera.lookAt(515, 10, 575); };
+        window.toggleGrid = function() { gridHelper.visible = document.getElementById('showGrid').checked; };
+        window.toggleAxes = function() { axesHelper.visible = document.getElementById('showAxes').checked; };
+        window.toggleConnections = function() {
+            const show = document.getElementById('showConnections').checked;
+            sceneObjects.connections.forEach((line) => scene.remove(line));
+            sceneObjects.connections = [];
+            if (show) {
+                sceneObjects.locations.forEach((loc) => {
+                    let nearestNode = null; let minDistance = Infinity;
+                    sceneObjects.nodes.forEach((node) => {
+                        const distance = loc.position.distanceTo(node.position);
+                        if (distance < minDistance) { minDistance = distance; nearestNode = node; }
+                    });
+                    if (nearestNode) {
+                        const nodeTop = new THREE.Vector3(nearestNode.position.x, 25, nearestNode.position.z);
+                        const points = [loc.position, nodeTop];
+                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                        const material = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+                        const line = new THREE.Line(geometry, material);
+                        scene.add(line);
+                        sceneObjects.connections.push(line);
+                    }
+                });
+            }
+        };
+        window.toggleDistances = function() {
+            const show = document.getElementById('showDistances').checked;
+            const distanceList = document.getElementById('distanceList');
+            if (show) {
+                let html = '';
+                sceneObjects.locations.forEach((loc) => {
+                    sceneObjects.nodes.forEach((node) => {
+                        const dist = loc.position.distanceTo(node.position);
+                        html += `<div class="distance-line">${loc.userData.name} ↔ ${node.userData.name}: <strong>${dist.toFixed(2)}m</strong></div>`;
+                    });
+                });
+                distanceList.innerHTML = html;
+            } else {
+                distanceList.innerHTML = 'Click "Show Distances" to calculate distances';
+            }
+        };
+        window.updateBuildingOpacity = function(value) {
+            const opacity = value / 100;
+            sceneObjects.buildings.forEach((b) => { b.material.opacity = opacity; });
+            document.getElementById('opacityValue').textContent = value + '%';
+        };
+        window.updateRotationSpeed = function(value) { autoRotationSpeed = value / 5000; document.getElementById('speedValue').textContent = value; };
+        window.toggleFullscreen = function() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } };
+        window.zoomIn = function() { const d = new THREE.Vector3(); camera.getWorldDirection(d); camera.position.addScaledVector(d, 50); };
+        window.zoomOut = function() { const d = new THREE.Vector3(); camera.getWorldDirection(d); camera.position.addScaledVector(d, -50); };
+
+        // Legend toggles
+        document.querySelectorAll('.legend-item').forEach((item) => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                if (sceneObjects[type] && sceneObjects[type].length) {
+                    const visible = !sceneObjects[type][0].visible;
+                    sceneObjects[type].forEach((obj) => (obj.visible = visible));
+                    item.style.opacity = visible ? '1' : '0.4';
+                }
+            });
+        });
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animate
+        function animate() {
+            requestAnimationFrame(animate);
+            if (autoRotationSpeed > 0) {
+                const radius = Math.hypot(camera.position.x - 515, camera.position.z - 575);
+                const currentAngle = Math.atan2(camera.position.z - 575, camera.position.x - 515);
+                const newAngle = currentAngle + autoRotationSpeed;
+                camera.position.x = 515 + radius * Math.cos(newAngle);
+                camera.position.z = 575 + radius * Math.sin(newAngle);
+                camera.lookAt(515, 10, 575);
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

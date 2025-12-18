@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Silicon Laboratories Inc. (www.silabs.com)
+
+[Unit]
+Description=Wi-SUN Border Router Service
+Documentation=file:///usr/local/share/doc/wsbrd/examples/wsbrd.conf
+After=network.target
+
+# Other dependencies may need to be added depending on the border router
+# configuration, for example:
+
+# UART device
+# Prefer using predictable aliases (eg. from dev-serial-by\x2did) over raw tty
+# device names which may change.
+#Requires=dev-ttyACM0.device
+#After=dev-ttyACM0.device
+
+# CPC daemon
+#Requires=cpcd.service
+#After=cpcd.service
+
+# RADIUS server
+#Requires=freeradius.service
+#After=freeradius.service
+
+# DHCPv6 server
+#Requires=dhcpd.service
+#After=dhcpd.service
+
+[Service]
+BusName=com.silabs.Wisun.BorderRouter
+ExecStart=/usr/local/bin/wsbrd -F /etc/wsbrd.conf
+Restart=on-failure
+# Files created by wsbrd contain secrets, so remove read permissions
+UMask=0066
+
+[Install]
+WantedBy=multi-user.target

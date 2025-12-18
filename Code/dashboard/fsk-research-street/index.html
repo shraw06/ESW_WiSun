@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-SUN Network Analysis at IIITH</title>
+    
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 25px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 4px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Map Styles */
+        #map {
+            height: 600px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            position: relative;
+            z-index: 1;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            color: #333;
+            font-weight: 600;
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 280px;
+            color: #333;
+        }
+
+        .info-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            color: #667eea;
+        }
+
+        .info-panel p {
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .legend {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Visualization Styles */
+        .viz-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .viz-sidebar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            height: fit-content;
+        }
+
+        .viz-sidebar h3 {
+            margin-bottom: 15px;
+            fontSize: 1.1rem;
+            color: #333;
+        }
+
+        .viz-sidebar select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .viz-category {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+        }
+
+        .viz-button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 5px;
+            border: none;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .viz-button:hover {
+            background: #e9ecef;
+        }
+
+        .viz-button.active {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .viz-main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .chart-canvas {
+            width: 100% !important;
+            height: 400px !important;
+            max-height: 400px !important;
+            margin-bottom: 20px;
+        }
+
+        .insights-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .insights-box h4 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #1976d2;
+        }
+
+        .insights-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #0d47a1;
+        }
+
+        .insights-box li {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .stat-card h5 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .stat-card .stat-item {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .description {
+            color: #666;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .info-panel {
+                position: relative;
+                max-width: 100%;
+                margin-top: 20px;
+            }
+
+            .viz-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Wi-SUN Network Analysis at IIITH</h1>
+            <p class="subtitle">Real-time sensor data visualization and spatial network analysis</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'map-tab')">
+                🗺️ Interactive Map
+            </button>
+            <button class="tab-button" onclick="openTab(event, 'viz-tab')">
+                📊 Data Visualizations
+            </button>
+        </div>
+
+        <!-- Map Tab Content -->
+        <div id="map-tab" class="tab-content active">
+            <h2 class="section-title">Campus Network Topology</h2>
+            <p class="description">
+                Explore all sensor node locations across the IIITH campus including measurement points, 
+                border routers, control points, and network nodes. Click on any marker for detailed information.
+            </p>
+            <div style="margin: 15px 0 25px 0;">
+                <a href="network_3d.html" style="display:inline-block; background:#667eea; color:#fff; padding:10px 16px; border-radius:8px; text-decoration:none; font-weight:600; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                    🚀 Open 3D Network Visualization
+                </a>
+            </div>
+            
+            <div id="loading">Loading map data...</div>
+            <div id="map"></div>
+            
+            <div class="info-panel">
+                <h3>📊 Map Statistics</h3>
+                <p><strong>Total Nodes:</strong> <span id="poleCount">0</span></p>
+                <p><strong>Location:</strong> IIITH Campus</p>
+                <p style="font-size: 0.8rem; margin-top: 15px; color: #888;">
+                    💡 Click markers for details<br>
+                    🔍 Zoom and pan to explore
+                </p>
+                
+                <div class="legend">
+                    <strong style="font-size: 0.9rem;">Legend:</strong>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffee58;"></div>
+                        <span>Measurement Points</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #1976d2;"></div>
+                        <span>Border Routers/OFDM</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f002d2;"></div>
+                        <span>Control Points</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #388e3c;"></div>
+                        <span>FSK Routers</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f806c4;"></div>
+                        <span>Building TOPs</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #bdbdbd;"></div>
+                        <span>Regular Nodes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizations Tab Content -->
+        <div id="viz-tab" class="tab-content">
+            <h2 class="section-title">Network Performance Analysis</h2>
+            <p class="description">
+                Interactive visualizations of sensor data from 4 measurement locations. Analyze temperature, 
+                humidity, signal strength (RSL), routing metrics (hopcount, RPL rank), and their correlations.
+            </p>
+            <div id="viz-app"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <!-- Map JavaScript -->
+    <script>
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+            
+            if (tabName === 'map-tab' && window.mapInstance) {
+                setTimeout(() => window.mapInstance.invalidateSize(), 100);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            function initializeMap() {
+                if (typeof L === 'undefined') {
+                    console.error('Leaflet not loaded yet');
+                    return false;
+                }
+
+                try {
+                    const map = L.map('map').setView([17.4453, 78.3485], 17);
+                    window.mapInstance = map;
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+
+                    loadKMLData(map);
+                    document.getElementById('loading').classList.add('hidden');
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Map error:', error);
+                    return false;
+                }
+            }
+
+            function loadKMLData(map) {
+                const allLocations = [
+                    // Original points
+                    { name: "76", lat: 17.44619952232066, lon: 78.34852468427731, color: '#bdbdbd' },
+                    { name: "75", lat: 17.446227, lon: 78.34814999999999, color: '#80868b' },
+                    { name: "68", lat: 17.446023, lon: 78.34797999999999, color: '#80868b' },
+                    { name: "74", lat: 17.446394, lon: 78.34828999999999, color: '#80868b' },
+                    { name: "73", lat: 17.446497, lon: 78.34814799999999, color: '#80868b' },
+                    { name: "72", lat: 17.446631, lon: 78.347962, color: '#80868b' },
+                    { name: "71", lat: 17.44681, lon: 78.347765, color: '#80868b' },
+                    { name: "47", lat: 17.446865, lon: 78.347673, color: '#bdbdbd' },
+                    { name: "48", lat: 17.446699, lon: 78.347448, color: '#80868b' },
+                    { name: "46", lat: 17.44717499999999, lon: 78.34786299999999, color: '#80868b' },
+                    
+                    // Football Ground markers
+                    { name: "FG01", lat: 17.447172, lon: 78.348339, color: '#48bb78' },
+                    { name: "FG02", lat: 17.447019, lon: 78.348522, color: '#f204cc' },
+                    { name: "FG03", lat: 17.44687, lon: 78.348722, color: '#80868b' },
+                    { name: "FG04", lat: 17.44674921632886, lon: 78.34888852743995, color: '#fb07bc' },
+                    { name: "FG05", lat: 17.446517, lon: 78.348952, color: '#80868b' },
+                    { name: "FG06", lat: 17.446306, lon: 78.34875699999999, color: '#f901cb' },
+                    { name: "FG12", lat: 17.447141, lon: 78.34810399999999, color: '#80868b' },
+                    
+                    // Border Routers and Control Points
+                    { name: "FAN1.1 Border Router", lat: 17.44534766259706, lon: 78.34951256667128, color: '#1976d2' },
+                    { name: "FAN1.1 FSK Border Router", lat: 17.44506871213177, lon: 78.34928773851298, color: '#ff00fd' },
+                    { name: "FAN1.0 FSK Border Router", lat: 17.44528755531169, lon: 78.34944933562031, color: '#388e3c' },
+                    { name: "Football Ground Control Point", lat: 17.44711359372943, lon: 78.34849746345587, color: '#f002d2' },
+                    { name: "Faculty Quarter Control Point", lat: 17.44374348487684, lon: 78.34872839884655, color: '#ff00fd' },
+                    { name: "Nilgiri Control Point", lat: 17.44729732289277, lon: 78.34890867783535, color: '#fb03ca' },
+                    
+                    // OFDM Nodes
+                    { name: "OFDM Node 1", lat: 17.44616768296407, lon: 78.34961703748374, color: '#1976d2' },
+                    { name: "OFDM Node 2", lat: 17.44562400537042, lon: 78.35026034419332, color: '#1976d2' },
+                    
+                    // Building TOPs
+                    { name: "Vindya A6 TOP", lat: 17.4460433441503, lon: 78.34914759194912, color: '#f806c4' },
+                    { name: "KRB TOP", lat: 17.44505147678683, lon: 78.34931752016303, color: '#1976d2' },
+                    { name: "Vindya A2 TOP", lat: 17.4451529985613, lon: 78.35014870290165, color: '#f902d4' },
+                    { name: "Vindya C4 TOP", lat: 17.4459695319244, lon: 78.35012274996274, color: '#fa02c7' },
+                    
+                    // Pink/Purple measurement points
+                    { name: "Point 1", lat: 17.44484110791721, lon: 78.35030886612216, color: '#ffee58' },
+                    { name: "Point 2", lat: 17.44492122728538, lon: 78.35024950672253, color: '#ffee58' },
+                    { name: "Point 3", lat: 17.44499873669007, lon: 78.3501937489044, color: '#ffee58' },
+                    { name: "Point 4", lat: 17.44506224369291, lon: 78.35013038004345, color: '#ffee58' },
+                    { name: "Point 5", lat: 17.44513095864254, lon: 78.35004677677939, color: '#ffee58' },
+                    { name: "Point 6", lat: 17.44520958296187, lon: 78.34994833568433, color: '#ffee58' },
+                    { name: "Point 7", lat: 17.44530164247334, lon: 78.34986043248935, color: '#ffee58' },
+                    { name: "Point 8", lat: 17.44538489525048, lon: 78.34975242711603, color: '#ffee58' },
+                    { name: "Point 9", lat: 17.44547906492424, lon: 78.34967231862126, color: '#ffee58' },
+                    { name: "Point 10", lat: 17.44553712175677, lon: 78.34959115594799, color: '#ffee58' },
+                    { name: "Point 11", lat: 17.44560627484481, lon: 78.34950847815941, color: '#ffee58' },
+                    { name: "Point 12", lat: 17.44565406118118, lon: 78.34944313819361, color: '#ffee58' },
+                    { name: "Point 13", lat: 17.44568447334154, lon: 78.34937892128484, color: '#ffee58' },
+                    { name: "Point 14", lat: 17.4457281747304, lon: 78.3493228965169, color: '#ffee58' },
+                    { name: "Point 15", lat: 17.44578289927698, lon: 78.34926128254708, color: '#ffee58' },
+                    { name: "Point 16", lat: 17.44584450030423, lon: 78.34918552376959, color: '#ffee58' },
+                    { name: "Point 17", lat: 17.44590231456954, lon: 78.34911975636477, color: '#ffee58' },
+                    { name: "Point 18", lat: 17.44597640657811, lon: 78.34905839163274, color: '#ffee58' },
+                    { name: "Point 19", lat: 17.44603268562719, lon: 78.3489968328433, color: '#ffee58' },
+                    { name: "Point 20", lat: 17.446094711414, lon: 78.34892574295193, color: '#ffee58' },
+                    
+                    // Additional numbered points
+                    { name: "17", lat: 17.445475, lon: 78.34630299999999, color: '#80868b' },
+                    { name: "18", lat: 17.4450287676693, lon: 78.35056090704659, color: '#388e3c' },
+                    { name: "20", lat: 17.44538152203957, lon: 78.35092025611901, color: '#388e3c' },
+                    { name: "22", lat: 17.44505206906337, lon: 78.35058273747249, color: '#f702e8' },
+                    { name: "79", lat: 17.44608885745689, lon: 78.3488447556942, color: '#388e3c' },
+                    { name: "79A", lat: 17.445802, lon: 78.349192, color: '#388e3c' },
+                    { name: "80", lat: 17.44627246162533, lon: 78.34887110448845, color: '#ef04e4' },
+                    { name: "83", lat: 17.44665512763077, lon: 78.34914623577306, color: '#f606bc' },
+                    
+                    // More numbered points from KML
+                    { name: "1", lat: 17.444091, lon: 78.349745, color: '#80868b' },
+                    { name: "2", lat: 17.44391142265171, lon: 78.34955556735662, color: '#ff00fd' },
+                    { name: "3", lat: 17.44375, lon: 78.34937699999999, color: '#80868b' },
+                    { name: "4", lat: 17.443754, lon: 78.349237, color: '#ff00fd' },
+                    { name: "5", lat: 17.443795, lon: 78.349025, color: '#80868b' },
+                    { name: "6", lat: 17.44383890589354, lon: 78.34883526046721, color: '#ff00fd' },
+                    { name: "7", lat: 17.444882, lon: 78.35041, color: '#388e3c' },
+                    { name: "8", lat: 17.44469699163722, lon: 78.35027604578934, color: '#388e3c' },
+                    { name: "20", lat: 17.44449, lon: 78.35002399999999, color: '#ff00fd' },
+                    { name: "9", lat: 17.44452304565228, lon: 78.35012522231355, color: '#388e3c' },
+                    { name: "10", lat: 17.44443866671934, lon: 78.34970774807188, color: '#388e3c' },
+                    { name: "11", lat: 17.44457568077327, lon: 78.34955919374454, color: '#388e3c' },
+                    { name: "12", lat: 17.4447631134627, lon: 78.34930520182411, color: '#388e3c' },
+                    { name: "13", lat: 17.44488522691679, lon: 78.34917064569558, color: '#388e3c' },
+                    { name: "14", lat: 17.445018, lon: 78.348979, color: '#388e3c' },
+                    { name: "15", lat: 17.44513913304483, lon: 78.34881542003021, color: '#388e3c' },
+                    { name: "16", lat: 17.44532081456592, lon: 78.34854662033548, color: '#388e3c' },
+                    { name: "19", lat: 17.44523966017816, lon: 78.35073897554001, color: '#388e3c' },
+                    { name: "26", lat: 17.44541194611386, lon: 78.35094926669557, color: '#f606d6' },
+                    { name: "27", lat: 17.445514, lon: 78.35121699999999, color: '#80868b' },
+                    { name: "31", lat: 17.44580016085631, lon: 78.35094309087214, color: '#fa02d7' },
+                    { name: "32", lat: 17.44591, lon: 78.350765, color: '#80868b' },
+                    { name: "33", lat: 17.44607655996507, lon: 78.35059310217338, color: '#f402e2' },
+                    { name: "34", lat: 17.446228, lon: 78.35039399999999, color: '#80868b' },
+                    { name: "35", lat: 17.446363, lon: 78.35024, color: '#f902ee' },
+                    { name: "36", lat: 17.446543, lon: 78.350038, color: '#80868b' },
+                    { name: "37", lat: 17.44674033492009, lon: 78.349833675903, color: '#f502e0' },
+                    { name: "38", lat: 17.446889, lon: 78.349611, color: '#80868b' },
+                    { name: "39", lat: 17.447015, lon: 78.349453, color: '#f703d8' },
+                    { name: "40", lat: 17.447174, lon: 78.34926899999999, color: '#80868b' },
+                    { name: "41", lat: 17.44733918728992, lon: 78.34908154937698, color: '#f603d0' },
+                    { name: "42", lat: 17.44753037444844, lon: 78.34886425308106, color: '#80868b' },
+                    { name: "43", lat: 17.447682, lon: 78.348676, color: '#bdbdbd' },
+                    { name: "44", lat: 17.447607, lon: 78.348259, color: '#80868b' },
+                    { name: "45", lat: 17.447409, lon: 78.34809, color: '#bdbdbd' },
+                    { name: "65", lat: 17.44456976157717, lon: 78.3495819992358, color: '#ab47bc' },
+                    { name: "67", lat: 17.44577236515129, lon: 78.34839410854397, color: '#388e3c' },
+                    { name: "77", lat: 17.44613843334093, lon: 78.3487548095147, color: '#388e3c' },
+                    { name: "78", lat: 17.445964, lon: 78.348601, color: '#388e3c' },
+                    { name: "81", lat: 17.44646959604249, lon: 78.34903001732026, color: '#388e3c' },
+                    { name: "82", lat: 17.446943, lon: 78.34908399999999, color: '#80868b' },
+                    { name: "84", lat: 17.44691625110263, lon: 78.34945160004109, color: '#388e3c' }
+                ];
+
+                const bounds = [];
+                allLocations.forEach(loc => {
+                    // Use color from location data
+                    let color = loc.color || '#667eea';
+
+                    const marker = L.circleMarker([loc.lat, loc.lon], {
+                        radius: 6,
+                        fillColor: color,
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <div style="font-family: system-ui; padding: 5px;">
+                            <strong style="color: #667eea; font-size: 1.1em;">${loc.name}</strong><br>
+                            <span style="color: #666;">Lat: ${loc.lat.toFixed(6)}</span><br>
+                            <span style="color: #666;">Lon: ${loc.lon.toFixed(6)}</span>
+                        </div>
+                    `);
+                    
+                    bounds.push([loc.lat, loc.lon]);
+                });
+
+                document.getElementById('poleCount').textContent = allLocations.length;
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            }
+
+            let attempts = 0;
+            function tryInit() {
+                if (initializeMap()) {
+                    console.log('Map initialized');
+                } else if (attempts < 20) {
+                    attempts++;
+                    setTimeout(tryInit, 200);
+                } else {
+                    document.getElementById('loading').innerHTML = 'Failed to load map';
+                }
+            }
+            setTimeout(tryInit, 100);
+        });
+    </script>
+
+    <!-- Visualization JavaScript -->
+    <script>
+        // Data
+        const location1Data = [
+            { time: '11:34', temp: 27.4, humidity: 55.0, rsl_out: -71, rsl_in: -95, rpl_rank: 939, hopcount: 4 },
+            { time: '11:36', temp: 27.5, humidity: 54.2, rsl_out: -68, rsl_in: -93, rpl_rank: 942, hopcount: 4 },
+            { time: '11:38', temp: 27.7, humidity: 54.0, rsl_out: -70, rsl_in: -94, rpl_rank: 983, hopcount: 4 },
+            { time: '11:40', temp: 27.5, humidity: 53.5, rsl_out: -71, rsl_in: -94, rpl_rank: 982, hopcount: 4 },
+            { time: '11:42', temp: 27.3, humidity: 54.3, rsl_out: -70, rsl_in: -94, rpl_rank: 951, hopcount: 4 },
+            { time: '11:44', temp: 26.4, humidity: 55.9, rsl_out: -69, rsl_in: -93, rpl_rank: 952, hopcount: 4 },
+            { time: '11:46', temp: 25.8, humidity: 57.4, rsl_out: -71, rsl_in: -96, rpl_rank: 952, hopcount: 4 },
+            { time: '11:48', temp: 25.3, humidity: 58.5, rsl_out: -71, rsl_in: -95, rpl_rank: 917, hopcount: 4 },
+            { time: '11:50', temp: 25.1, humidity: 60.2, rsl_out: -70, rsl_in: -95, rpl_rank: 989, hopcount: 4 }
+        ];
+
+        const location2Data = [
+            { time: '12:02', temp: 22.3, humidity: 68.5, rsl_out: -67, rsl_in: -94, rpl_rank: 1160, hopcount: 4 },
+            { time: '12:04', temp: 22.4, humidity: 68.4, rsl_out: -73, rsl_in: -96, rpl_rank: 1160, hopcount: 4 },
+            { time: '12:06', temp: 22.3, humidity: 68.9, rsl_out: -67, rsl_in: -93, rpl_rank: 1192, hopcount: 4 },
+            { time: '12:08', temp: 22.0, humidity: 67.7, rsl_out: -66, rsl_in: -92, rpl_rank: 1183, hopcount: 4 },
+            { time: '12:10', temp: 24.1, humidity: 72.0, rsl_out: -68, rsl_in: -94, rpl_rank: 1166, hopcount: 4 },
+            { time: '12:12', temp: 23.8, humidity: 64.4, rsl_out: -73, rsl_in: -96, rpl_rank: 1186, hopcount: 4 },
+            { time: '12:14', temp: 23.2, humidity: 65.1, rsl_out: -65, rsl_in: -92, rpl_rank: 1186, hopcount: 4 },
+            { time: '12:16', temp: 23.1, humidity: 66.5, rsl_out: -68, rsl_in: -98, rpl_rank: 1243, hopcount: 4 },
+            { time: '12:18', temp: 22.9, humidity: 66.6, rsl_out: -66, rsl_in: -93, rpl_rank: 1248, hopcount: 4 }
+        ];
+
+        const location3Data = [
+            { time: '12:26', temp: 22.0, humidity: 69.7, rsl_out: -76, rsl_in: -103, rpl_rank: 1243, hopcount: 4 },
+            { time: '12:28', temp: 22.0, humidity: 69.7, rsl_out: -75, rsl_in: -101, rpl_rank: 1243, hopcount: 4 },
+            { time: '12:30', temp: 22.2, humidity: 69.2, rsl_out: -77, rsl_in: -101, rpl_rank: 1413, hopcount: 4 },
+            { time: '12:32', temp: 21.9, humidity: 70.7, rsl_out: -75, rsl_in: -100, rpl_rank: 1480, hopcount: 4 },
+            { time: '12:34', temp: 21.7, humidity: 71.2, rsl_out: -76, rsl_in: -101, rpl_rank: 1480, hopcount: 5 },
+            { time: '12:36', temp: 21.6, humidity: 72.2, rsl_out: -75, rsl_in: -101, rpl_rank: 1596, hopcount: 5 },
+            { time: '12:38', temp: 21.6, humidity: 72.5, rsl_out: -75, rsl_in: -100, rpl_rank: 1594, hopcount: 5 },
+            { time: '12:42', temp: 21.4, humidity: 72.6, rsl_out: -74, rsl_in: -101, rpl_rank: 1647, hopcount: 5 },
+            { time: '12:47', temp: 21.1, humidity: 73.9, rsl_out: -75, rsl_in: -101, rpl_rank: 1741, hopcount: 5 }
+        ];
+
+        const location4Data = [
+            { time: '15:37', temp: 21.4, humidity: 66.7, rsl_out: -56, rsl_in: -83, rpl_rank: 961, hopcount: 3 },
+            { time: '15:39', temp: 21.4, humidity: 67.2, rsl_out: -62, rsl_in: -87, rpl_rank: 1031, hopcount: 3 },
+            { time: '15:41', temp: 21.4, humidity: 68.0, rsl_out: -61, rsl_in: -90, rpl_rank: 1034, hopcount: 3 },
+            { time: '15:44', temp: 21.5, humidity: 67.0, rsl_out: -63, rsl_in: -88, rpl_rank: 1071, hopcount: 3 },
+            { time: '15:47', temp: 21.5, humidity: 67.0, rsl_out: -59, rsl_in: -87, rpl_rank: 1059, hopcount: 3 },
+            { time: '15:50', temp: 21.2, humidity: 66.9, rsl_out: -62, rsl_in: -86, rpl_rank: 1080, hopcount: 3 },
+            { time: '15:53', temp: 21.4, humidity: 66.5, rsl_out: -56, rsl_in: -83, rpl_rank: 1140, hopcount: 3 },
+            { time: '15:56', temp: 21.1, humidity: 71.2, rsl_out: -60, rsl_in: -86, rpl_rank: 1196, hopcount: 3 },
+            { time: '15:59', temp: 20.8, humidity: 73.7, rsl_out: -56, rsl_in: -85, rpl_rank: 1221, hopcount: 3 }
+        ];
+
+        const allData = {
+            'Location 1': location1Data,
+            'Location 2': location2Data,
+            'Location 3': location3Data,
+            'Location 4': location4Data
+        };
+
+        // Visualization App
+        class VisualizationApp {
+            constructor() {
+                this.selectedViz = 'temperature-time';
+                this.selectedLocation = 'all';
+                this.currentChart = null;
+                // Shift display of time labels by +5 hours (11→4, 12→5, 15→8)
+                this.timeOffsetHours = 5;
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.attachEventListeners();
+                // Give DOM time to settle before rendering first chart
+                setTimeout(() => this.renderChart(), 100);
+            }
+
+            getData() {
+                if (this.selectedLocation === 'all') {
+                    return [...location1Data, ...location2Data, ...location3Data, ...location4Data];
+                }
+                return allData[this.selectedLocation];
+            }
+
+            render() {
+                const container = document.getElementById('viz-app');
+                container.innerHTML = `
+                    <div class="viz-container">
+                        <div class="viz-sidebar">
+                            <h3>Filters</h3>
+                            <select id="location-select">
+                                <option value="all">All Locations</option>
+                                <option value="Location 1">Location 1</option>
+                                <option value="Location 2">Location 2</option>
+                                <option value="Location 3">Location 3</option>
+                                <option value="Location 4">Location 4</option>
+                            </select>
+
+                            <div class="viz-category">Time Series</div>
+                            <button class="viz-button active" data-viz="temperature-time">Temperature vs Time</button>
+                            <button class="viz-button" data-viz="humidity-time">Humidity vs Time</button>
+                            <button class="viz-button" data-viz="rsl-time">RSL (In/Out) vs Time</button>
+                            <button class="viz-button" data-viz="hopcount-time">Hopcount vs Time</button>
+                            <button class="viz-button" data-viz="rpl-time">RPL Rank vs Time</button>
+
+                            <div class="viz-category">Correlations</div>
+                            <button class="viz-button" data-viz="rsl-reciprocity">RSL In vs Out</button>
+                            <button class="viz-button" data-viz="hopcount-rsl">Hopcount vs RSL</button>
+                            <button class="viz-button" data-viz="location-comparison">Location Comparison</button>
+                        </div>
+
+                        <div class="viz-main">
+                            <div class="chart-container">
+                                <h3 class="chart-title" id="chart-title">Temperature vs Time</h3>
+                                <canvas id="main-chart" class="chart-canvas"></canvas>
+                            </div>
+
+                            <div class="insights-box">
+                                <h4>💡 Key Insights</h4>
+                                <ul id="insights-list">
+                                    <li>Location 1 shows significant temperature drop (27.4°C → 25.1°C)</li>
+                                    <li>Location 4 has most stable temperature around 21°C</li>
+                                </ul>
+                            </div>
+
+                            <div class="chart-container">
+                                <h4>Summary Statistics</h4>
+                                <div class="stats-grid" id="stats-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                this.renderStats();
+            }
+
+            // Convert 'HH:MM' to label shifted by timeOffsetHours and formatted in 12-hour "h:MM" without AM/PM
+            formatTimeLabel(timeStr) {
+                if (typeof timeStr !== 'string' || !timeStr.includes(':')) return timeStr;
+                const [hStr, mStr] = timeStr.split(':');
+                const h = Math.max(0, Math.min(23, parseInt(hStr, 10)));
+                const m = Math.max(0, Math.min(59, parseInt(mStr, 10)));
+                const shifted = (h + this.timeOffsetHours) % 24;
+                const hour12 = ((shifted + 11) % 12) + 1; // 0→12, 13→1, etc.
+                const mm = m.toString().padStart(2, '0');
+                return `${hour12}:${mm}`;
+            }
+
+            renderStats() {
+                const statsGrid = document.getElementById('stats-grid');
+                let html = '';
+                
+                Object.entries(allData).forEach(([loc, data]) => {
+                    const avgTemp = (data.reduce((a, b) => a + b.temp, 0) / data.length).toFixed(1);
+                    const avgRslIn = (data.reduce((a, b) => a + b.rsl_in, 0) / data.length).toFixed(1);
+                    const avgHopcount = (data.reduce((a, b) => a + b.hopcount, 0) / data.length).toFixed(1);
+                    
+                    html += `
+                        <div class="stat-card">
+                            <h5>${loc}</h5>
+                            <div class="stat-item">Temp: <strong>${avgTemp}°C</strong></div>
+                            <div class="stat-item">RSL In: <strong>${avgRslIn} dBm</strong></div>
+                            <div class="stat-item">Hops: <strong>${avgHopcount}</strong></div>
+                        </div>
+                    `;
+                });
+                
+                statsGrid.innerHTML = html;
+            }
+
+            attachEventListeners() {
+                document.getElementById('location-select').addEventListener('change', (e) => {
+                    this.selectedLocation = e.target.value;
+                    this.renderChart();
+                });
+
+                document.querySelectorAll('.viz-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.viz-button').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.selectedViz = e.target.dataset.viz;
+                        this.renderChart();
+                    });
+                });
+            }
+
+            updateInsights() {
+                const insights = {
+                    'temperature-time': [
+                        'Location 1 shows significant temperature drop (27.4°C → 25.1°C)',
+                        'Location 4 has most stable temperature around 21°C'
+                    ],
+                    'humidity-time': [
+                        'Humidity increases over time in most locations',
+                        'Location 3 reaches highest humidity levels (73%+)'
+                    ],
+                    'rsl-time': [
+                        'Location 4 shows best signal quality (RSL closer to 0)',
+                        'Location 3 has weakest signals (RSL_in around -100 dBm)'
+                    ],
+                    'hopcount-time': [
+                        'Location 3 increases from 4 to 5 hops mid-session',
+                        'Location 4 maintains stable 3-hop connection (best)'
+                    ],
+                    'rpl-time': [
+                        'RPL rank varies significantly across locations',
+                        'Higher ranks indicate greater distance from root node'
+                    ],
+                    'rsl-reciprocity': [
+                        'Strong correlation indicates good link symmetry',
+                        'Deviations suggest antenna or propagation issues'
+                    ],
+                    'hopcount-rsl': [
+                        'Weaker signals generally require more hops',
+                        'Location 4 achieves best performance with fewer hops'
+                    ],
+                    'location-comparison': [
+                        'Location 4 has best overall performance metrics',
+                        'Environmental conditions vary significantly across locations'
+                    ]
+                };
+
+                const list = document.getElementById('insights-list');
+                const currentInsights = insights[this.selectedViz] || ['Select a visualization'];
+                list.innerHTML = currentInsights.map(i => `<li>${i}</li>`).join('');
+            }
+
+            renderChart() {
+                const data = this.getData();
+                const canvas = document.getElementById('main-chart');
+                
+                // Properly destroy previous chart
+                if (this.currentChart) {
+                    this.currentChart.destroy();
+                    this.currentChart = null;
+                }
+
+                // Clear and reset canvas
+                const parent = canvas.parentNode;
+                canvas.remove();
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = 'main-chart';
+                newCanvas.className = 'chart-canvas';
+                parent.appendChild(newCanvas);
+                
+                const ctx = newCanvas.getContext('2d');
+
+                // Update title
+                const titles = {
+                    'temperature-time': 'Temperature vs Time',
+                    'humidity-time': 'Humidity vs Time',
+                    'rsl-time': 'RSL (In/Out) vs Time',
+                    'hopcount-time': 'Hopcount vs Time',
+                    'rpl-time': 'RPL Rank vs Time',
+                    'rsl-reciprocity': 'RSL In vs Out',
+                    'hopcount-rsl': 'Hopcount vs RSL',
+                    'location-comparison': 'Location Comparison'
+                };
+                document.getElementById('chart-title').textContent = titles[this.selectedViz];
+                this.updateInsights();
+
+                switch(this.selectedViz) {
+                    case 'temperature-time':
+                        this.currentChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(d => this.formatTimeLabel(d.time)),
+                                datasets: [{
+                                    label: 'Temperature (°C)',
+                                    data: data.map(d => d.temp),
+                                    borderColor: '#8884d8',
+                                    backgroundColor: 'rgba(136, 132, 216, 0.1)',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'humidity-time':
+                        this.currentChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(d => this.formatTimeLabel(d.time)),
+                                datasets: [{
+                                    label: 'Humidity (%)',
+                                    data: data.map(d => d.humidity),
+                                    borderColor: '#82ca9d',
+                                    backgroundColor: 'rgba(130, 202, 157, 0.1)',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'rsl-time':
+                        this.currentChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(d => this.formatTimeLabel(d.time)),
+                                datasets: [{
+                                    label: 'RSL In (dBm)',
+                                    data: data.map(d => d.rsl_in),
+                                    borderColor: '#ff7300',
+                                    backgroundColor: 'rgba(255, 115, 0, 0.1)',
+                                    tension: 0.4
+                                }, {
+                                    label: 'RSL Out (dBm)',
+                                    data: data.map(d => d.rsl_out),
+                                    borderColor: '#387908',
+                                    backgroundColor: 'rgba(56, 121, 8, 0.1)',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'hopcount-time':
+                        this.currentChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(d => this.formatTimeLabel(d.time)),
+                                datasets: [{
+                                    label: 'Hopcount',
+                                    data: data.map(d => d.hopcount),
+                                    borderColor: '#8b5cf6',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                    stepped: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: false
+                                    }
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'rpl-time':
+                        this.currentChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(d => this.formatTimeLabel(d.time)),
+                                datasets: [{
+                                    label: 'RPL Rank',
+                                    data: data.map(d => d.rpl_rank),
+                                    borderColor: '#ec4899',
+                                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'rsl-reciprocity':
+                        if (this.selectedLocation === 'all') {
+                            const datasets = [
+                                { label: 'Location 1', data: location1Data.map(d => ({x: d.rsl_out, y: d.rsl_in})), backgroundColor: '#8884d8' },
+                                { label: 'Location 2', data: location2Data.map(d => ({x: d.rsl_out, y: d.rsl_in})), backgroundColor: '#82ca9d' },
+                                { label: 'Location 3', data: location3Data.map(d => ({x: d.rsl_out, y: d.rsl_in})), backgroundColor: '#ffc658' },
+                                { label: 'Location 4', data: location4Data.map(d => ({x: d.rsl_out, y: d.rsl_in})), backgroundColor: '#ff7300' }
+                            ];
+                            this.currentChart = new Chart(ctx, {
+                                type: 'scatter',
+                                data: { datasets },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'RSL Out (dBm)' } },
+                                        y: { title: { display: true, text: 'RSL In (dBm)' } }
+                                    }
+                                }
+                            });
+                        } else {
+                            this.currentChart = new Chart(ctx, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: [{
+                                        label: this.selectedLocation,
+                                        data: data.map(d => ({x: d.rsl_out, y: d.rsl_in})),
+                                        backgroundColor: '#8884d8'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'RSL Out (dBm)' } },
+                                        y: { title: { display: true, text: 'RSL In (dBm)' } }
+                                    }
+                                }
+                            });
+                        }
+                        break;
+
+                    case 'hopcount-rsl':
+                        if (this.selectedLocation === 'all') {
+                            const datasets = [
+                                { label: 'Location 1', data: location1Data.map(d => ({x: d.rsl_in, y: d.hopcount})), backgroundColor: '#8884d8' },
+                                { label: 'Location 2', data: location2Data.map(d => ({x: d.rsl_in, y: d.hopcount})), backgroundColor: '#82ca9d' },
+                                { label: 'Location 3', data: location3Data.map(d => ({x: d.rsl_in, y: d.hopcount})), backgroundColor: '#ffc658' },
+                                { label: 'Location 4', data: location4Data.map(d => ({x: d.rsl_in, y: d.hopcount})), backgroundColor: '#ff7300' }
+                            ];
+                            this.currentChart = new Chart(ctx, {
+                                type: 'scatter',
+                                data: { datasets },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'RSL In (dBm)' } },
+                                        y: { title: { display: true, text: 'Hopcount' } }
+                                    }
+                                }
+                            });
+                        } else {
+                            this.currentChart = new Chart(ctx, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: [{
+                                        label: this.selectedLocation,
+                                        data: data.map(d => ({x: d.rsl_in, y: d.hopcount})),
+                                        backgroundColor: '#8b5cf6'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'RSL In (dBm)' } },
+                                        y: { title: { display: true, text: 'Hopcount' } }
+                                    }
+                                }
+                            });
+                        }
+                        break;
+
+                    case 'location-comparison':
+                        const locationStats = {};
+                        Object.entries(allData).forEach(([loc, data]) => {
+                            const temps = data.map(d => d.temp);
+                            const rslIns = data.map(d => d.rsl_in);
+                            const rslOuts = data.map(d => d.rsl_out);
+                            locationStats[loc] = {
+                                avgTemp: (temps.reduce((a,b) => a+b, 0) / temps.length).toFixed(1),
+                                avgRslIn: (rslIns.reduce((a,b) => a+b, 0) / rslIns.length).toFixed(1),
+                                avgRslOut: (rslOuts.reduce((a,b) => a+b, 0) / rslOuts.length).toFixed(1)
+                            };
+                        });
+
+                        const labels = Object.keys(locationStats).map(l => l.replace('Location ', 'L'));
+                        
+                        this.currentChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Avg Temperature (°C)',
+                                    data: Object.values(locationStats).map(s => parseFloat(s.avgTemp)),
+                                    backgroundColor: '#8884d8'
+                                }, {
+                                    label: 'Avg RSL In (dBm)',
+                                    data: Object.values(locationStats).map(s => parseFloat(s.avgRslIn)),
+                                    backgroundColor: '#ff7300'
+                                }, {
+                                    label: 'Avg RSL Out (dBm)',
+                                    data: Object.values(locationStats).map(s => parseFloat(s.avgRslOut)),
+                                    backgroundColor: '#387908'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: true }
+                                }
+                            }
+                        });
+                        break;
+                }
+            }
+        }
+
+        // Initialize app when DOM is ready - ONLY ONCE
+        let appInitialized = false;
+        
+        function initializeVisualizationApp() {
+            if (appInitialized) return;
+            appInitialized = true;
+            
+            const vizTab = document.getElementById('viz-tab');
+            if (!vizTab) {
+                setTimeout(initializeVisualizationApp, 100);
+                return;
+            }
+            
+            new VisualizationApp();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeVisualizationApp);
+        } else {
+            initializeVisualizationApp();
+        }
+    </script>
+</body>
+</html>

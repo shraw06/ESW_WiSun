@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Wi-SUN Premium Dashboard — Static CSV</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <!-- <style>
+    :root{
+      --bg:#f4f6fb; --card:#fff; --text:#111; --muted:#666; --accent:#1e90ff;
+      --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+    }
+    [data-theme="dark"]{
+      --bg:#0b1220; --card:#071028; --text:#e6eef8; --muted:#9fb3d5; --accent:#4ea8ff;
+    }
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--accent);color:white;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    header h1{margin:0;font-size:20px}
+    .container{padding:18px;max-width:1200px;margin:0 auto}
+    .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .kpi{flex:1;min-width:160px;background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    .kpi .label{font-size:12px;color:var(--muted)}
+    .kpi .value{font-weight:700;font-size:18px;margin-top:6px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .controls button, .controls select, .controls input{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:var(--card);color:var(--text)}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.06);margin-bottom:18px}
+    nav.tabs{display:flex;gap:10px;margin-bottom:12px}
+    nav.tabs button{padding:8px 12px;border-radius:10px;border:none;background:transparent;color:var(--muted);cursor:pointer}
+    nav.tabs button.active{color:var(--text);background:linear-gradient(90deg,var(--accent),#7cc8ff);color:white}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:1000px){ .grid{grid-template-columns:1fr 1fr} }
+    .small{font-size:12px;color:var(--muted)}
+    .alertbox{padding:10px;border-radius:10px;background:rgba(255,230,230,0.9);color:var(--bad);margin-bottom:10px;display:none}
+    .download-btn{background:linear-gradient(90deg,var(--good),#6ee7b7);border:none;color:white}
+    .footer{color:var(--muted);font-size:12px;margin-top:10px;text-align:center}
+  </style> -->
+  <!-- <style>
+    :root{
+      --bg:linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      --card:#fff; 
+      --text:#333; 
+      --muted:#666; 
+      --accent:#667eea;
+      --good:#16a34a; 
+      --warn:#f59e0b; 
+      --bad:#ef4444;
+      --header-bg:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    [data-theme="dark"]{
+      --bg:linear-gradient(135deg, #4a5568 0%, #2d3748 100%); 
+      --card:#1a202c; 
+      --text:#e6eef8; 
+      --muted:#9fb3d5; 
+      --accent:#667eea;
+      --header-bg:linear-gradient(90deg, #4a5568 0%, #2d3748 100%);
+    }
+    body{
+      margin:0;
+      font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    header{
+      background:var(--header-bg);
+      color:white;
+      padding:20px 30px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    }
+    header h1{
+      margin:0;
+      font-size:24px;
+      font-weight:600;
+      letter-spacing:-0.5px;
+    }
+    .container{
+      padding:24px;
+      max-width:1400px;
+      margin:0 auto;
+    }
+    .kpi-row{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+    .kpi{
+      flex:1;
+      min-width:180px;
+      background:var(--card);
+      padding:20px;
+      border-radius:16px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      transition:transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi:hover{
+      transform:translateY(-2px);
+      box-shadow:0 8px 20px rgba(0,0,0,0.12);
+    }
+    .kpi .label{
+      font-size:13px;
+      color:var(--muted);
+      font-weight:500;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+    .kpi .value{
+      font-weight:700;
+      font-size:24px;
+      margin-top:8px;
+      color:#667eea;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .controls button, .controls select, .controls input{
+      padding:10px 16px;
+      border-radius:10px;
+      border:1px solid rgba(102,126,234,0.2);
+      background:var(--card);
+      color:var(--text);
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .controls button:hover{
+      background:#667eea;
+      color:white;
+      border-color:#667eea;
+    }
+    .card{
+      background:var(--card);
+      padding:24px;
+      border-radius:16px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom:20px;
+    }
+    .card h3{
+      margin:0 0 16px 0;
+      font-size:18px;
+      font-weight:600;
+      color:#667eea;
+    }
+    nav.tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:20px;
+    }
+    nav.tabs button{
+      padding:12px 24px;
+      border-radius:12px;
+      border:none;
+      background:rgba(255,255,255,0.9);
+      color:var(--muted);
+      cursor:pointer;
+      font-weight:500;
+      font-size:14px;
+      transition:all 0.2s;
+    }
+    nav.tabs button:hover{
+      background:rgba(102,126,234,0.1);
+      color:#667eea;
+    }
+    nav.tabs button.active{
+      background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      color:white;
+      box-shadow:0 4px 12px rgba(102,126,234,0.3);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:20px;
+    }
+    @media(min-width:1000px){ 
+      .grid{grid-template-columns:1fr 1fr} 
+    }
+    .small{
+      font-size:13px;
+      color:var(--muted);
+    }
+    .alertbox{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(255,230,230,0.9);
+      color:var(--bad);
+      margin-bottom:12px;
+      display:none;
+    }
+    .download-btn{
+      background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border:none;
+      color:white;
+      font-weight:600;
+    }
+    .download-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(102,126,234,0.4);
+    }
+    .footer{
+      color:rgba(255,255,255,0.7);
+      font-size:13px;
+      margin-top:20px;
+      text-align:center;
+    }
+    .top-controls{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    #themeToggle{
+      padding:8px 16px;
+      background:rgba(255,255,255,0.2);
+      border-radius:8px;
+      cursor:pointer;
+      font-size:13px;
+      transition:all 0.2s;
+    }
+    #themeToggle:hover{
+      background:rgba(255,255,255,0.3);
+    }
+  </style> -->
+  <style>
+    :root{
+      --bg:linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      --card:#fff; 
+      --text:#333; 
+      --muted:#666; 
+      --accent:#667eea;
+      --good:#16a34a; 
+      --warn:#f59e0b; 
+      --bad:#ef4444;
+      --header-bg:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    [data-theme="dark"]{
+      --bg:linear-gradient(135deg, #4a5568 0%, #2d3748 100%); 
+      --card:#1a202c; 
+      --text:#e6eef8; 
+      --muted:#9fb3d5; 
+      --accent:#667eea;
+      --header-bg:linear-gradient(90deg, #4a5568 0%, #2d3748 100%);
+    }
+    body{
+      margin:0;
+      font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      font-size:16px;
+    }
+    header{
+      background:var(--header-bg);
+      color:white;
+      padding:32px 40px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    }
+    header h1{
+      margin:0;
+      font-size:32px;
+      font-weight:600;
+      letter-spacing:-0.5px;
+    }
+    .container{
+      padding:40px;
+      max-width:1600px;
+      margin:0 auto;
+    }
+    .kpi-row{
+      display:flex;
+      gap:24px;
+      flex-wrap:wrap;
+      margin-bottom:32px;
+    }
+    .kpi{
+      flex:1;
+      min-width:220px;
+      background:var(--card);
+      padding:28px;
+      border-radius:20px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      transition:transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi:hover{
+      transform:translateY(-2px);
+      box-shadow:0 8px 20px rgba(0,0,0,0.12);
+    }
+    .kpi .label{
+      font-size:15px;
+      color:var(--muted);
+      font-weight:500;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+    .kpi .value{
+      font-weight:700;
+      font-size:32px;
+      margin-top:12px;
+      color:#667eea;
+    }
+    .controls{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:24px;
+    }
+    .controls button, .controls select, .controls input{
+      padding:14px 20px;
+      border-radius:12px;
+      border:1px solid rgba(102,126,234,0.2);
+      background:var(--card);
+      color:var(--text);
+      font-size:16px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .controls button:hover{
+      background:#667eea;
+      color:white;
+      border-color:#667eea;
+    }
+    .card{
+      background:var(--card);
+      padding:32px;
+      border-radius:20px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom:28px;
+    }
+    .card h3{
+      margin:0 0 20px 0;
+      font-size:22px;
+      font-weight:600;
+      color:#667eea;
+    }
+    nav.tabs{
+      display:flex;
+      gap:12px;
+      margin-bottom:28px;
+    }
+    nav.tabs button{
+      padding:16px 32px;
+      border-radius:14px;
+      border:none;
+      background:rgba(255,255,255,0.9);
+      color:var(--muted);
+      cursor:pointer;
+      font-weight:500;
+      font-size:16px;
+      transition:all 0.2s;
+    }
+    nav.tabs button:hover{
+      background:rgba(102,126,234,0.1);
+      color:#667eea;
+    }
+    nav.tabs button.active{
+      background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      color:white;
+      box-shadow:0 4px 12px rgba(102,126,234,0.3);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:28px;
+    }
+    @media(min-width:1000px){ 
+      .grid{grid-template-columns:1fr 1fr} 
+    }
+    .small{
+      font-size:15px;
+      color:var(--muted);
+    }
+    .alertbox{
+      padding:16px;
+      border-radius:14px;
+      background:rgba(255,230,230,0.9);
+      color:var(--bad);
+      margin-bottom:16px;
+      display:none;
+      font-size:15px;
+    }
+    .download-btn{
+      background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border:none;
+      color:white;
+      font-weight:600;
+    }
+    .download-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(102,126,234,0.4);
+    }
+    .footer{
+      color:rgba(255,255,255,0.7);
+      font-size:15px;
+      margin-top:32px;
+      text-align:center;
+    }
+    .top-controls{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    #themeToggle{
+      padding:12px 20px;
+      background:rgba(255,255,255,0.2);
+      border-radius:10px;
+      cursor:pointer;
+      font-size:15px;
+      transition:all 0.2s;
+    }
+    #themeToggle:hover{
+      background:rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body data-theme="light">
+<header>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div>
+      <h1>📡 Wi-SUN Dashboard — Static CSV</h1>
+      <div class="small">Source: <strong>static.csv</strong> · No auto-refresh</div>
+    </div>
+  </div>
+  <div class="top-controls">
+    <div class="small">Theme</div>
+    <div class="toggle" id="themeToggle">Toggle</div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="controls card">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div>
+        <label class="small">Range:</label>
+        <button id="r30">30m</button>
+        <button id="r60">1h</button>
+        <button id="r360">6h</button>
+        <button id="r1440">24h</button>
+        <button id="rAll">All</button>
+      </div>
+
+      <div>
+        <label class="small">Window samples:</label>
+        <input id="windowSamples" type="number" value="200" min="50" max="5000" style="width:90px"/>
+      </div>
+
+      <div>
+        <label class="small">Smoothing:</label>
+        <select id="smoothing">
+          <option value="none">None</option>
+          <option value="ema">EMA (alpha=0.2)</option>
+          <option value="sma">SMA (window=5)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="small">Anomaly z-threshold:</label>
+        <input id="zth" type="number" step="0.1" value="1.5" style="width:80px"/>
+      </div>
+
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="refreshNow">Load CSV</button>
+        <button id="downloadCSV" class="download-btn">Download CSV</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px">Smoothing & anomaly detection computed client-side for chosen window.</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">Avg RSL_in (dBm)</div><div class="value" id="kpi_rsl_in">—</div><div class="small" id="kpi_rsl_in_sub">std: —</div></div>
+    <div class="kpi"><div class="label">Avg RSL_out (dBm)</div><div class="value" id="kpi_rsl_out">—</div><div class="small" id="kpi_rsl_out_sub">std: —</div></div>
+    <div class="kpi"><div class="label">Avg Hopcount</div><div class="value" id="kpi_hop">—</div><div class="small" id="kpi_hop_sub">changes/hr: —</div></div>
+    <div class="kpi"><div class="label">Uptime %</div><div class="value" id="kpi_uptime">—</div><div class="small" id="kpi_uptime_sub">last disconnects: —</div></div>
+    <div class="kpi"><div class="label">PHY Health Score</div><div class="value" id="kpi_phy">—</div><div class="small" id="kpi_phy_sub">(0-100)</div></div>
+    <div class="kpi"><div class="label">Stability Score</div><div class="value" id="kpi_stab">—</div><div class="small" id="kpi_stab_sub">(higher = more stable)</div></div>
+  </div>
+
+  <nav class="tabs">
+    <button class="active" data-tab="main">Overview</button>
+    <button data-tab="anom">Anomalies & Environment</button>
+    <button data-tab="debug">Debug</button>
+  </nav>
+
+  <div id="tab_main" class="tabcontent" style="display:block">
+    <div class="grid">
+      <div class="card"><h3>RSL Time Series</h3><div id="plot_rsl" style="height:320px"></div></div>
+      <div class="card"><h3>Hopcount & Rank</h3><div id="plot_hop" style="height:320px"></div></div>
+
+      <div class="card"><h3>Connections</h3><div id="plot_conn" style="height:320px"></div></div>
+      <div class="card"><h3>Temperature vs RSL</h3><div id="plot_temp_rsl" style="height:320px"></div></div>
+
+      <div class="card"><h3>Correlation Heatmap</h3><div id="plot_heat" style="height:360px"></div></div>
+      <div class="card"><h3>Radar — Latest</h3><div id="plot_radar" style="height:360px"></div></div>
+    </div>
+  </div>
+
+  <div id="tab_anom" class="tabcontent" style="display:none">
+    <div class="grid">
+      <div class="card"><h3>Anomaly Heatmap (Hour vs Day)</h3><div id="plot_anom_day_hour" style="height:360px"></div></div>
+      <div class="card"><h3>Anomaly Summary KPIs</h3><div id="anom_kpis" style="display:flex;gap:12px;flex-wrap:wrap"></div></div>
+      <div class="card"><h3>Anomaly Scatter on RSL</h3><div id="plot_anom_scatter" style="height:320px"></div></div>
+      <div class="card"><h3>Humidity</h3><div id="plot_hum" style="height:320px"></div></div>
+    </div>
+  </div>
+
+  <div id="tab_debug" class="tabcontent" style="display:none">
+    <div class="card"><h3>Raw Data Sample</h3><pre id="raw_sample" style="max-height:300px;overflow:auto"></pre></div>
+    <div class="card"><h3>Console / Debug</h3><pre id="debug" style="max-height:300px;overflow:auto"></pre></div>
+  </div>
+
+  <div class="footer small">Built for Plotly.js — now using static CSV (no ThingSpeak). </div>
+</div>
+
+<script>
+/* ================== CONFIG ================== */
+const CSV_PATH = "static.csv"; // must be in same folder as this HTML
+const DEFAULT_WINDOW_SAMPLES = 200;
+
+/* ================== UI wiring ================== */
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+themeToggle.onclick = () => {
+  const cur = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', cur);
+};
+
+const tabs = document.querySelectorAll('nav.tabs button');
+tabs.forEach(btn => btn.onclick = () => {
+  tabs.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tabcontent').forEach(tc => tc.style.display='none');
+  document.getElementById('tab_' + btn.dataset.tab).style.display = 'block';
+});
+
+document.getElementById('r30').onclick = ()=>setRangeMinutes(30);
+document.getElementById('r60').onclick = ()=>setRangeMinutes(60);
+document.getElementById('r360').onclick = ()=>setRangeMinutes(360);
+document.getElementById('r1440').onclick = ()=>setRangeMinutes(1440);
+document.getElementById('rAll').onclick = ()=>setRangeMinutes(null);
+
+document.getElementById('refreshNow').onclick = ()=>fetchAndRender(true);
+document.getElementById('downloadCSV').onclick = ()=>downloadCSV();
+
+let windowSamplesInput = document.getElementById('windowSamples');
+let smoothingSelect = document.getElementById('smoothing');
+let zthInput = document.getElementById('zth');
+let debugEl = document.getElementById('debug');
+let rawSampleEl = document.getElementById('raw_sample');
+
+let latestFeeds = [];
+
+/* ================== UTILITIES ================== */
+function showAlert(msg, type='info'){
+  const ab = document.getElementById('alertbox') || null;
+  if(!ab) return;
+  ab.style.display = 'block'; ab.textContent = msg;
+  setTimeout(()=>ab.style.display='none', 5000);
+}
+function isFiniteNumber(x){ return typeof x==='number' && isFinite(x); }
+function mean(arr){ const v = arr.filter(isFinite); return v.length? v.reduce((a,b)=>a+b,0)/v.length:NaN; }
+function std(arr){ const v=arr.filter(isFinite); if(!v.length) return NaN; const m=mean(v); return Math.sqrt(v.reduce((s,x)=>s+(x-m)*(x-m),0)/v.length); }
+function sma(arr, window=5){ if(window<=1) return arr.slice(); let res=[]; for(let i=0;i<arr.length;i++){ const start=Math.max(0,i-window+1); const slice=arr.slice(start,i+1).filter(isFinite); res.push(slice.length? mean(slice): NaN); } return res; }
+function ema(arr, alpha=0.2){ let res=[]; let s=NaN; for(let i=0;i<arr.length;i++){ const v=arr[i]; if(!isFinite(v)){ res.push(NaN); continue; } if(!isFinite(s)){ s=v; } else s = alpha * v + (1-alpha)*s; res.push(s); } return res; }
+function diffArr(arr){ let d=[]; for(let i=1;i<arr.length;i++) d.push((isFinite(arr[i])&&isFinite(arr[i-1]))? (arr[i]-arr[i-1]) : NaN); return d; }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+/* ================== CSV parsing ================== */
+async function fetchCSV(){
+  try {
+    const res = await fetch(CSV_PATH, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    // parse CSV robustly (simple parser)
+    const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
+    const header = lines[0].split(',').map(h=>h.trim().replace(/["']/g,'').toLowerCase());
+    const rows = lines.slice(1).map(l => {
+      // split but allow commas inside quotes (basic)
+      const cols = l.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+      return cols.map(c => c.trim().replace(/^"|"$/g,''));
+    }).filter(r => r.length >= 2);
+
+    // map header columns to our expected fields (be flexible)
+    // expected: Timestamp, Temperature, Humidity, Disconnected_Total, RSL_in, Hopcount, RSL_out, RPL_rank, Connected_Total
+    const mapIndex = (names) => {
+      for(const n of names){
+        const idx = header.findIndex(h=>h.includes(n));
+        if(idx>=0) return idx;
+      }
+      return -1;
+    };
+    const idx_time = mapIndex(['timestamp','time','created_at']);
+    const idx_temp = mapIndex(['temperature','temp','field1']);
+    const idx_hum = mapIndex(['humidity','hum','field2']);
+    const idx_disc = mapIndex(['disconnected','disconnected_total','disc','field3']);
+    const idx_rsl_in = mapIndex(['rsl_in','rslin','field4']);
+    const idx_rsl_out = mapIndex(['rsl_out','rslout','field5']);
+    const idx_rank = mapIndex(['rpl_rank','rank','field6']);
+    const idx_hop = mapIndex(['hopcount','hop','field7']);
+    const idx_conn = mapIndex(['connected_total','connected','conn','field8']);
+
+    const feeds = rows.map(cols=>{
+      const tRaw = idx_time>=0 ? cols[idx_time] : cols[0];
+      const t = new Date(tRaw);
+      return {
+        time: isNaN(t.getTime()) ? null : t,
+        temp: idx_temp>=0 ? parseFloat(cols[idx_temp]) : NaN,
+        hum: idx_hum>=0 ? parseFloat(cols[idx_hum]) : NaN,
+        disc: idx_disc>=0 ? parseFloat(cols[idx_disc]) : NaN,
+        rsl_in: idx_rsl_in>=0 ? parseFloat(cols[idx_rsl_in]) : NaN,
+        rsl_out: idx_rsl_out>=0 ? parseFloat(cols[idx_rsl_out]) : NaN,
+        rank: idx_rank>=0 ? parseFloat(cols[idx_rank]) : NaN,
+        hop: idx_hop>=0 ? parseFloat(cols[idx_hop]) : NaN,
+        conn: idx_conn>=0 ? parseFloat(cols[idx_conn]) : NaN,
+        raw: cols
+      };
+    }).filter(f=>f.time!==null);
+
+    return feeds;
+  } catch (e){
+    console.error("Failed to load CSV:", e);
+    showAlert("Failed to load static.csv: " + e.message, 'bad');
+    return [];
+  }
+}
+
+/* ================== Main pipeline ================== */
+function prepareComputed(feeds){
+  // keep chronological order (oldest -> newest)
+  feeds.sort((a,b)=>a.time - b.time);
+
+  // pick window
+  const samples = Math.max(50, Math.min(parseInt(windowSamplesInput.value) || DEFAULT_WINDOW_SAMPLES, feeds.length));
+  const windowFeeds = feeds.slice(Math.max(0, feeds.length - samples));
+
+  // extract arrays
+  const c = {
+    time: windowFeeds.map(f=>f.time),
+    temp: windowFeeds.map(f=>isFinite(f.temp)?f.temp:NaN),
+    hum: windowFeeds.map(f=>isFinite(f.hum)?f.hum:NaN),
+    disc: windowFeeds.map(f=>isFinite(f.disc)?f.disc:NaN),
+    rsl_in: windowFeeds.map(f=>isFinite(f.rsl_in)?f.rsl_in:NaN),
+    rsl_out: windowFeeds.map(f=>isFinite(f.rsl_out)?f.rsl_out:NaN),
+    rank: windowFeeds.map(f=>isFinite(f.rank)?f.rank:NaN),
+    hop: windowFeeds.map(f=>isFinite(f.hop)?f.hop:NaN),
+    conn: windowFeeds.map(f=>isFinite(f.conn)?f.conn:NaN),
+    raw: windowFeeds
+  };
+
+  // smoothing
+  const smoothing = smoothingSelect.value;
+  if(smoothing==='sma'){ c.rsl_in_s = sma(c.rsl_in, 5); c.rsl_out_s = sma(c.rsl_out,5); c.hum_s = sma(c.hum,5); c.hop_s = sma(c.hop,5);} 
+  else if(smoothing==='ema'){ c.rsl_in_s = ema(c.rsl_in,0.2); c.rsl_out_s = ema(c.rsl_out,0.2); c.hum_s = ema(c.hum,0.2); c.hop_s = ema(c.hop,0.2);} 
+  else { c.rsl_in_s = c.rsl_in.slice(); c.rsl_out_s = c.rsl_out.slice(); c.hum_s = c.hum.slice(); c.hop_s = c.hop.slice(); }
+
+  // compute diffs
+  c.disc_d = diffArr(c.disc);
+  c.rank_d = diffArr(c.rank);
+
+  // anomaly detection: combined rule (zscore + absolute + sudden drop)
+  // compute z-score over sliding window for rsl_in
+  function zscoreSeries(arr, window=30){
+    const n = arr.length; let zs = Array(n).fill(NaN);
+    for(let i=0;i<n;i++){
+      const start = Math.max(0, i - window + 1);
+      const slice = arr.slice(start, i+1).filter(isFinite);
+      if(slice.length < 3){ zs[i] = NaN; continue; }
+      const m = mean(slice), s = std(slice);
+      zs[i] = isFinite(s) && s>0 ? (arr[i] - m) / s : NaN;
+    }
+    return zs;
+  }
+  const zs = zscoreSeries(c.rsl_in, 30);
+  const zth = parseFloat(zthInput.value) || 1.5;
+
+  const anomalies = [];
+  for(let i=0;i<c.rsl_in.length;i++){
+    const z = zs[i];
+    const r = c.rsl_in[i];
+    const prev = i>0? c.rsl_in[i-1]:NaN;
+    const drop = (isFinite(prev) && isFinite(r)) ? (r - prev) : 0;
+
+    const isZ = isFinite(z) && Math.abs(z) > zth;
+    const isAbs = isFinite(r) && r < -115;        // absolute low RSSI threshold (adjustable)
+    const isDrop = isFinite(drop) && drop < -5;   // sudden drop threshold (dBm)
+    if(isZ || isAbs || isDrop){
+      anomalies.push({
+        idx: i,
+        time: c.time[i],
+        value: r,
+        z: z,
+        drop: drop,
+        temp: c.temp[i],
+        hum: c.hum[i],
+        hop: c.hop[i],
+        rank: c.rank[i],
+        conn: c.conn[i]
+      });
+    }
+  }
+
+  // compute stability and PHY scores (simple rolling functions)
+  function rollingStability(rsl_in, hop, rank){
+    const n=rsl_in.length; let res=[];
+    for(let i=0;i<n;i++){
+      const start=Math.max(0,i-30);
+      const rsl_slice=rsl_in.slice(start,i+1).filter(isFinite);
+      const hop_slice=hop.slice(start,i+1).filter(isFinite);
+      const rank_slice=rank.slice(start,i+1).filter(isFinite);
+      const s_rsl = clamp(100 - (std(rsl_slice) || 0)*2, 0, 100);
+      const s_hop = clamp(100 - (std(hop_slice) || 0)*20, 0, 100);
+      const s_rank = clamp(100 - (std(rank_slice) || 0)*0.05, 0, 100);
+      res.push( Math.round( (s_rsl*0.55 + s_hop*0.25 + s_rank*0.2) ) );
+    }
+    return res;
+  }
+  function rollingPHY(rsl_in, hop, conn){
+    const n=rsl_in.length; let res=[];
+    for(let i=0;i<n;i++){
+      const start=Math.max(0,i-30);
+      const rsl_slice=rsl_in.slice(start,i+1).filter(isFinite);
+      const hop_slice=hop.slice(start,i+1).filter(isFinite);
+      const conn_slice = conn.slice(start,i+1).filter(isFinite);
+      const rsl_score = clamp( ( (mean(rsl_slice)||-130) + 120 ) / 40 * 100, 0, 100);
+      const hop_score = clamp(100 - (mean(hop_slice)||0)*15, 0, 100);
+      const conn_rate = clamp((mean(conn_slice)||0) / ( (mean(conn_slice)||1) )*100, 0, 100);
+      res.push(Math.round(rsl_score*0.6 + hop_score*0.25 + conn_rate*0.15));
+    }
+    return res;
+  }
+
+  c.anomalies = anomalies;
+  c.phy = rollingPHY(c.rsl_in, c.hop, c.conn);
+  c.stab = rollingStability(c.rsl_in, c.hop, c.rank);
+
+  return c;
+}
+
+/* ================== RENDERING ================== */
+function renderAll(c){
+  // KPIs
+  document.getElementById('kpi_rsl_in').textContent = isFinite(mean(c.rsl_in)) ? mean(c.rsl_in).toFixed(1) + ' dBm' : '—';
+  document.getElementById('kpi_rsl_in_sub').textContent = 'std: ' + (isFinite(std(c.rsl_in)) ? std(c.rsl_in).toFixed(2) : '—');
+  document.getElementById('kpi_rsl_out').textContent = isFinite(mean(c.rsl_out)) ? mean(c.rsl_out).toFixed(1) + ' dBm' : '—';
+  document.getElementById('kpi_rsl_out_sub').textContent = 'std: ' + (isFinite(std(c.rsl_out)) ? std(c.rsl_out).toFixed(2) : '—');
+  document.getElementById('kpi_hop').textContent = isFinite(mean(c.hop)) ? mean(c.hop).toFixed(2) : '—';
+  document.getElementById('kpi_phy').textContent = c.phy.length ? c.phy[c.phy.length-1] : '—';
+  document.getElementById('kpi_stab').textContent = c.stab.length ? c.stab[c.stab.length-1] : '—';
+
+  // RSL time series + anomaly markers
+  const rslTraces = [
+    { x:c.time, y:c.rsl_in_s, mode:'lines', name:'RSL_in (smoothed)' },
+    { x:c.time, y:c.rsl_out_s, mode:'lines', name:'RSL_out (smoothed)' },
+    { x:c.time, y:c.rsl_in, mode:'markers', name:'RSL_in (raw)', marker:{size:4,opacity:0.5} }
+  ];
+  if(c.anomalies.length) rslTraces.push({ x:c.anomalies.map(a=>a.time), y:c.anomalies.map(a=>a.value), mode:'markers', name:'Anomaly', marker:{size:8,color:'red',symbol:'x'} });
+  Plotly.newPlot('plot_rsl', rslTraces, {margin:{t:30}, xaxis:{title:'Time'}, yaxis:{title:'dBm'}}, {responsive:true});
+
+  // Hop time
+  Plotly.newPlot('plot_hop', [{ x:c.time, y:c.hop, mode:'lines+markers', name:'Hop' }], {margin:{t:30}, xaxis:{title:'Time'}, yaxis:{title:'Hopcount'}}, {responsive:true});
+
+  // Connections
+  Plotly.newPlot('plot_conn', [
+    { x:c.time, y:c.conn, mode:'lines', name:'Connected' },
+    { x:c.time, y:c.disc, mode:'lines', name:'Disconnected', line:{color:'#ef4444'} }
+  ], {margin:{t:30}, xaxis:{title:'Time'}, yaxis:{title:'Count'}}, {responsive:true});
+
+  // Temp vs RSL scatter
+  Plotly.newPlot('plot_temp_rsl', [{ x:c.temp, y:c.rsl_in, mode:'markers', name:'Temp vs RSL' }], {margin:{t:30}, xaxis:{title:'Temp °C'}, yaxis:{title:'RSL_in (dBm)'}}, {responsive:true});
+
+  // Humidity
+  Plotly.newPlot('plot_hum', [{ x:c.time, y:c.hum_s, mode:'lines+markers', name:'Hum (smoothed)' }, { x:c.time, y:c.hum, mode:'markers', name:'Hum (raw)', marker:{size:4}}], {margin:{t:30}, xaxis:{title:'Time'}, yaxis:{title:'% RH'}}, {responsive:true});
+
+  // Correlation heatmap
+  const labels = ['Temp','Hum','RSL_in','RSL_out','Rank','Hop','Conn'];
+  function correlationMatrix(arrs){
+    const n=arrs.length; const M = Array.from({length:n}, ()=>Array(n).fill(0));
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        const a = arrs[i].filter(isFinite);
+        const b = arrs[j].filter(isFinite);
+        // compute pairwise only on indices where both finite
+        const pairs = [];
+        for(let k=0;k<Math.min(arrs[i].length, arrs[j].length); k++){
+          if(isFinite(arrs[i][k]) && isFinite(arrs[j][k])) pairs.push([arrs[i][k], arrs[j][k]]);
+        }
+        if(pairs.length<2){ M[i][j]=0; continue; }
+        const ax = pairs.map(p=>p[0]); const bx = pairs.map(p=>p[1]);
+        const mx = mean(ax), my = mean(bx);
+        const num = ax.reduce((s,v,ii)=> s + (v-mx)*(bx[ii]-my), 0);
+        const den = Math.sqrt(ax.reduce((s,v)=>s+(v-mx)*(v-mx),0) * bx.reduce((s,v)=>s+(v-my)*(v-my),0));
+        M[i][j] = den? num/den : 0;
+      }
+    }
+    return M;
+  }
+  const matrix = correlationMatrix([c.temp, c.hum, c.rsl_in, c.rsl_out, c.rank, c.hop, c.conn]);
+  Plotly.newPlot('plot_heat', [{ z: matrix, x: labels, y: labels, type:'heatmap', colorscale:'RdBu', zmin:-1, zmax:1, colorbar:{title:'corr'} }], {margin:{t:30}}, {responsive:true});
+
+  // Radar (latest)
+  if(c.time.length){
+    const latest = c.time.length-1;
+    const radarVals = [
+      clamp( ( (c.rsl_in_s[latest] || c.rsl_in[latest]) + 140 ) / 60 * 100, 0, 100 ),
+      clamp( ( (c.rsl_out_s[latest] || c.rsl_out[latest]) + 140 ) / 60 * 100, 0, 100 ),
+      clamp(100 - (c.hop[latest] || 0)*20, 0, 100),
+      clamp(100 - (c.rank[latest]||0)/10, 0, 100),
+      clamp( (c.conn[latest]||0) / ((c.conn[latest]||1)+(c.disc[latest]||0)) * 100, 0, 100)
+    ];
+    Plotly.newPlot('plot_radar', [{ type:'scatterpolar', r: radarVals, theta:['RSL_in','RSL_out','Hop','Rank','Conn%'], fill: 'toself' }], {polar:{radialaxis:{visible:true,range:[0,100]}}, margin:{t:20}}, {responsive:true});
+  }
+
+  // Anomaly KPIs & debug list
+  const anomKpis = document.getElementById('anom_kpis');
+  anomKpis.innerHTML = '';
+  const totalAnom = c.anomalies.length;
+  const avgZ = totalAnom? (c.anomalies.reduce((s,a)=>s+ (isFinite(a.z)?Math.abs(a.z):0),0)/totalAnom).toFixed(2) : '—';
+  anomKpis.innerHTML += `<div class="kpi" style="min-width:120px"><div class="label">Total Anomalies</div><div class="value">${totalAnom}</div></div>`;
+  anomKpis.innerHTML += `<div class="kpi" style="min-width:120px"><div class="label">Avg |z|</div><div class="value">${avgZ}</div></div>`;
+  anomKpis.innerHTML += `<div class="kpi" style="min-width:120px"><div class="label">Last Anomaly</div><div class="value">${totalAnom? new Date(c.anomalies[c.anomalies.length-1].time).toLocaleString() : '—'}</div></div>`;
+
+  // Anomaly scatter (RSL_in vs temp, colored by z)
+  Plotly.newPlot('plot_anom_scatter', [{
+    x: c.anomalies.map(a=>a.time),
+    y: c.anomalies.map(a=>a.value),
+    text: c.anomalies.map(a=>`z=${(isFinite(a.z)?a.z.toFixed(2):'—')} drop=${a.drop.toFixed(1)} dBm`),
+    mode:'markers',
+    marker:{size:8,color: c.anomalies.map(a=>isFinite(a.z)?Math.min(6, Math.abs(a.z)) : 0), colorscale:'Hot', colorbar:{title:'|z|'}}
+  }], {margin:{t:30}, xaxis:{title:'Time'}, yaxis:{title:'RSL (dBm)'}}, {responsive:true});
+
+  // Anomaly heatmap (hour vs day) — FIXED: use relative day index
+  // Build day-hour matrix using day index relative to first sample in window
+  const dayHourMatrix = {};
+  const startTime = c.time.length ? c.time[0] : new Date();
+  c.anomalies.forEach(a => {
+    const dayIndex = Math.floor((a.time - startTime) / (1000 * 60 * 60 * 24)) + 1;
+    const hour = a.time.getHours();
+    if(!dayHourMatrix[dayIndex]) dayHourMatrix[dayIndex] = Array(24).fill(0);
+    dayHourMatrix[dayIndex][hour] += 1;
+  });
+  const uniqueDays = Object.keys(dayHourMatrix).map(d=>parseInt(d)).sort((a,b)=>a-b);
+  const heatmapZ = uniqueDays.map(d => [...dayHourMatrix[d]]);
+  const heatmapY = uniqueDays.map(d => "Day " + d);
+  const heatmapX = Array.from({length:24}, (_,i)=>i);
+  Plotly.newPlot('plot_anom_day_hour', [{
+    z: heatmapZ.length ? heatmapZ : [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+    x: heatmapX,
+    y: heatmapY.length ? heatmapY : ["Day 1"],
+    type: 'heatmap',
+    colorscale: 'Hot',
+    colorbar: { title: 'Anomaly Count' },
+    hovertemplate: 'Hour %{x}:00<br>%{y}<br>Anomalies: %{z}<extra></extra>'
+  }], {margin:{t:30}, xaxis:{title:'Hour of Day (0–23)'}, yaxis:{title:'Day', automargin:true}}, {responsive:true});
+
+  // Debug prints
+  debugEl.textContent = 'Detected anomalies: ' + JSON.stringify(c.anomalies.map(a=>({time: a.time.toLocaleString(), value: a.value, z: isFinite(a.z)?a.z.toFixed(2):null, drop: a.drop.toFixed(1)})), null, 2);
+  rawSampleEl.textContent = JSON.stringify(latestFeeds.slice(0,5).map(f=>({time:f.time?.toLocaleString(), rsl_in:f.rsl_in, temp:f.temp, hum:f.hum})), null, 2);
+}
+
+/* ================== CSV Download helper (download currently loaded window) ================== */
+function downloadCSV(){
+  if(!latestFeeds || !latestFeeds.length){ showAlert("No data to download", 'bad'); return; }
+  const header = ['timestamp','temperature','humidity','disconnected','rsl_in','rsl_out','rpl_rank','hopcount','connected'];
+  const rows = latestFeeds.map(p => [
+    p.time.toISOString(),
+    isFinite(p.temp)?p.temp:'',
+    isFinite(p.hum)?p.hum:'',
+    isFinite(p.disc)?p.disc:'',
+    isFinite(p.rsl_in)?p.rsl_in:'',
+    isFinite(p.rsl_out)?p.rsl_out:'',
+    isFinite(p.rank)?p.rank:'',
+    isFinite(p.hop)?p.hop:'',
+    isFinite(p.conn)?p.conn:'',
+  ]);
+  const csv = [header.join(','), ...rows.map(r=> r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `static_export.csv`; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ================== Range control ================== */
+function setRangeMinutes(minutes){
+  if(minutes===null){
+    windowSamplesInput.value = latestFeeds.length;
+  } else {
+    const samples = Math.min(latestFeeds.length, Math.max(50, Math.ceil((minutes*60)/20)));
+    windowSamplesInput.value = samples;
+  }
+  fetchAndRender(true);
+}
+
+/* ================== Main entrypoint ================== */
+async function fetchAndRender(force=false){
+  // load CSV only once and cache in latestFeeds
+  if(!latestFeeds.length || force){
+    latestFeeds = await fetchCSV();
+  }
+  if(!latestFeeds.length){
+    showAlert("No data loaded from CSV", 'bad');
+    return;
+  }
+  // prepare computed object and render
+  const computed = prepareComputed(latestFeeds);
+  renderAll(computed);
+}
+
+// Initial load
+fetchAndRender(true);
+
+</script>
+</body>
+</html>
